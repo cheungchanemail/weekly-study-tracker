@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Target Achievement Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200 custom-scrollbar">
+
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2 font-semibold text-sm">
+        <i data-lucide="check-circle" class="w-5 h-5"></i>
+        <span id="toast-message">Progress Saved!</span>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-blue-600 text-white rounded-xl shadow-md shadow-blue-500/20">
+                    <i data-lucide="check-square" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="font-bold text-lg leading-tight tracking-tight">Weekly Study Tracker</h1>
+                        <span id="sync-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center space-x-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span>Local Save Ready</span>
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Targeting Excellence • Auto-saved locally</p>
+                </div>
+            </div>
+
+            <!-- Save Button & Profile Selector -->
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <!-- EXPLICIT SAVE BUTTON -->
+                <button onclick="manualSaveProgress()" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center space-x-1.5 active:scale-95">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    <span>Save Progress</span>
+                </button>
+
+                <!-- User Profile Switcher -->
+                <div class="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl flex items-center space-x-1 border border-slate-200 dark:border-slate-700">
+                    <button id="btn-ewan" onclick="switchProfile('ewan')" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center space-x-1.5">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        <span>Ewan</span>
+                    </button>
+                    <button id="btn-raphael" onclick="switchProfile('raphael')" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center space-x-1.5">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        <span>Raphael</span>
+                    </button>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <div class="hidden sm:flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <button id="tab-checklist-btn" onclick="switchTab('checklist')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm">
+                        <i data-lucide="list-todo" class="w-4 h-4"></i>
+                        <span>Checklist</span>
+                    </button>
+                    <button id="tab-dashboard-btn" onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                        <span>Dashboard</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sub-header Navigation for Mobile -->
+    <div class="sm:hidden flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <button id="tab-checklist-btn-mobile" onclick="switchTab('checklist')" class="flex-1 py-2.5 text-center text-sm font-medium border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 flex items-center justify-center space-x-2">
+            <i data-lucide="list-todo" class="w-4 h-4"></i>
+            <span>Checklist</span>
+        </button>
+        <button id="tab-dashboard-btn-mobile" onclick="switchTab('dashboard')" class="flex-1 py-2.5 text-center text-sm font-medium border-b-2 border-transparent text-slate-500 dark:text-slate-400 flex items-center justify-center space-x-2">
+            <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+            <span>Dashboard</span>
+        </button>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- Top Banner Counter -->
+        <div class="mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                    <span id="target-student-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white/20 text-white backdrop-blur-sm">
+                        Ewan's Plan
+                    </span>
+                    <span id="header-date-range" class="text-xs text-blue-100 font-medium bg-blue-900/40 px-2.5 py-0.5 rounded-full">Week 1: 26 Oct 2026 - 01 Nov 2026</span>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-bold mt-1">Weekly Target Checklist</h2>
+                <p class="text-sm text-blue-100 mt-0.5">Click tasks to tick off. Progress is auto-saved to this browser.</p>
+            </div>
+            
+            <div class="flex items-center space-x-4 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/20 w-full md:w-auto justify-between md:justify-start">
+                <div>
+                    <div class="text-xs text-blue-100 font-medium uppercase tracking-wider">Total Ticks Done</div>
+                    <div class="text-2xl font-black flex items-baseline space-x-1">
+                        <span id="header-completed-ticks">0</span>
+                        <span class="text-sm font-normal text-blue-200" id="header-target-ticks">/ 29 target</span>
+                    </div>
+                </div>
+                <div class="w-12 h-12 relative flex items-center justify-center">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                        <path class="text-blue-900/40" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path id="header-progress-circle" class="text-white transition-all duration-500" stroke-dasharray="0, 100" stroke-width="3.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    </svg>
+                    <span id="header-progress-percent" class="absolute text-xs font-bold">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 1: CHECKLIST PAGE -->
+        <div id="view-checklist" class="space-y-6">
+
+            <!-- Quick Links Header -->
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="link" class="w-4 h-4 text-slate-400"></i>
+                    <span class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Error Logbooks & Links:</span>
+                </div>
+                <div id="quick-links-container" class="flex flex-wrap items-center gap-2"></div>
+            </div>
+
+            <!-- Sections List -->
+            <div id="sections-wrapper" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
+        </div>
+
+        <!-- VIEW 2: DASHBOARD PAGE -->
+        <div id="view-dashboard" class="hidden space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Current Week Ticks</span>
+                        <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-500"></i>
+                    </div>
+                    <div class="mt-2 flex items-baseline justify-between">
+                        <span id="dash-current-ticks" class="text-3xl font-bold">0</span>
+                        <span id="dash-target-ticks" class="text-xs text-slate-400">Target: 29</span>
+                    </div>
+                    <div class="mt-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div id="dash-progress-bar" class="bg-blue-600 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Target Completion Rate</span>
+                        <i data-lucide="target" class="w-5 h-5 text-emerald-500"></i>
+                    </div>
+                    <div class="mt-2 flex items-baseline justify-between">
+                        <span id="dash-completion-rate" class="text-3xl font-bold">0%</span>
+                        <span class="text-xs text-emerald-600 dark:text-emerald-400 font-medium" id="dash-status-label">On Track</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-3">Calculated against target minimum</p>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Current Active Week</span>
+                        <i data-lucide="calendar" class="w-5 h-5 text-indigo-500"></i>
+                    </div>
+                    <div class="mt-2">
+                        <span id="dash-current-week-label" class="text-xl font-bold">Week 1</span>
+                    </div>
+                    <p id="dash-current-week-dates" class="text-xs text-slate-500 mt-3">26 Oct 2026 - 01 Nov 2026</p>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Weekly Archive</div>
+                        <p class="text-xs text-slate-500 mt-1">Archive current ticks to start new week</p>
+                    </div>
+                    <button onclick="archiveCurrentWeek()" class="w-full mt-3 px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+                        <i data-lucide="archive-restore" class="w-4 h-4"></i>
+                        <span>Complete & Archive Week</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-base font-bold">Week-over-Week Performance History</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Total tick count achieved across recorded weeks</p>
+                        </div>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="historyChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-base font-bold">Category Distribution</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Ticks earned by section</p>
+                        </div>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Log Table -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div class="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <h3 class="text-base font-bold">Archived Weekly Log</h3>
+                    <button onclick="clearHistory()" class="text-xs text-rose-500 hover:text-rose-700 font-medium">Clear History</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 dark:bg-slate-800/50 text-xs text-slate-400 uppercase font-semibold">
+                            <tr>
+                                <th class="px-6 py-3">Week</th>
+                                <th class="px-6 py-3">Date Range</th>
+                                <th class="px-6 py-3">Total Ticks</th>
+                                <th class="px-6 py-3">Target Quota</th>
+                                <th class="px-6 py-3">Achievement Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // ============================================================
+        // CONFIG & DATA
+        // ============================================================
+        const BASE_START_DATE = new Date(2026, 9, 26); // Oct 26, 2026
+
+        function getWeekDateRange(weekIndex) {
+            const startDate = new Date(BASE_START_DATE);
+            startDate.setDate(startDate.getDate() + (weekIndex * 7));
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + 6);
+            const formatOpt = { day: '2-digit', month: 'short', year: 'numeric' };
+            return {
+                startStr: startDate.toLocaleDateString('en-GB', formatOpt),
+                endStr: endDate.toLocaleDateString('en-GB', formatOpt),
+                formattedRange: `${startDate.toLocaleDateString('en-GB', formatOpt)} - ${endDate.toLocaleDateString('en-GB', formatOpt)}`
+            };
+        }
+
+        const DATA = {
+            ewan: {
+                name: "Ewan",
+                targetTicks: 29,
+                quickLinks: [
+                    { title: "Math Error Logbook", url: "https://docs.google.com/document/d/1ZbnPPP5oKRxYZOdMBpodIbFRgwho7I1TEAfzvjpxnO0/edit?usp=sharing" },
+                    { title: "Physics Error Logbook", url: "https://docs.google.com/document/d/14kRCzZlFz3gEaq8kriTmhVbFyG9ivcoQ79KFsCjjFw4/edit?usp=sharing" },
+                    { title: "Writing Practice Doc", url: "https://docs.google.com/document/d/1JzBuZ8i1diSsss2w5tAP9nw5cXN4UycCDVRn44DKfCo/edit?usp=sharing" },
+                    { title: "Chinese Log", url: "https://docs.google.com/document/d/1PmeZBsb_vY1dOSzNKU2cLiMNWkyG7cPFnp4h9kNavCQ/edit?tab=t.0" },
+                    { title: "SAT Question Bank", url: "https://satsuiteeducatorquestionbank.collegeboard.org/" },
+                    { title: "SAT Error Logbook", url: "https://docs.google.com/document/d/12_j6eO5HSW5XGbeVAA7PufAsKtqNG1Q3M5SPrVBuom0/edit?tab=t.0" },
+                    { title: "Aero Quiz Logbook", url: "https://docs.google.com/document/d/1DaYaa65jCGzBOCGnKwqH9PTOtaUIwn9rtNHohxPmRWg/edit?usp=sharing" },
+                    { title: "Aero Quiz Web", url: "https://aeroquiz.hkyaa.hk/" }
+                ],
+                sections: [
+                    {
+                        id: "ewan-stem",
+                        title: "1. Physics & Mathematics",
+                        icon: "calculator",
+                        subsections: [
+                            {
+                                name: "Math Routine (at least 5 ticks) [Math Error Logbook]",
+                                docLink: "https://docs.google.com/document/d/1ZbnPPP5oKRxYZOdMBpodIbFRgwho7I1TEAfzvjpxnO0/edit?usp=sharing",
+                                items: [
+                                    { id: "e_m1", label: "Haese (school syllabus alignment) - Slot 1" },
+                                    { id: "e_m2", label: "Haese (school syllabus alignment) - Slot 2" },
+                                    { id: "e_m3", label: "Haese (school syllabus alignment) - Slot 3" },
+                                    { id: "e_m4", label: "Isaac Maths (20; GCSE, Mastery, or Problem Solving) - Slot 1" },
+                                    { id: "e_m5", label: "Isaac Maths (20; GCSE, Mastery, or Problem Solving) - Slot 2" },
+                                    { id: "e_m6", label: "Isaac Maths (20; GCSE, Mastery, or Problem Solving) - Slot 3" },
+                                    { id: "e_m7", label: "Save My Exams practice (Targeted weak-area practice)" }
+                                ]
+                            },
+                            {
+                                name: "Physics Routine (at least 5 ticks) [Physics Error Logbook]",
+                                docLink: "https://docs.google.com/document/d/14kRCzZlFz3gEaq8kriTmhVbFyG9ivcoQ79KFsCjjFw4/edit?usp=sharing",
+                                items: [
+                                    { id: "e_p1", label: "Isaac Physics (15-20; GCSE, Mastery, or Problem Solving) - Slot 1" },
+                                    { id: "e_p2", label: "Isaac Physics (15-20; GCSE, Mastery, or Problem Solving) - Slot 2" },
+                                    { id: "e_p3", label: "Isaac Physics (15-20; GCSE, Mastery, or Problem Solving) - Slot 3" },
+                                    { id: "e_p4", label: "Isaac Physics (15-20; GCSE, Mastery, or Problem Solving) - Slot 4" },
+                                    { id: "e_p5", label: "Save My Exams practice (Targeted weak-area practice)" }
+                                ]
+                            },
+                            {
+                                name: "Chemistry Routine (at least 2 ticks)",
+                                items: [
+                                    { id: "e_c1", label: "Isaac Chem (15-20; GCSE, Mastery, or Problem Solving) - Slot 1" },
+                                    { id: "e_c2", label: "Isaac Chem (15-20; GCSE, Mastery, or Problem Solving) - Slot 2" }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: "ewan-reading",
+                        title: "2. English & History Reading (Language & Humanities Prep)",
+                        icon: "book-open",
+                        subsections: [
+                            {
+                                name: "High-Level Reading Schedule (at least 5 ticks)",
+                                items: [
+                                    { id: "e_r1", label: "The Economist - Slot 1", link: "https://archive.is/SnRDz" },
+                                    { id: "e_r2", label: "The Economist - Slot 2", link: "https://archive.is/SnRDz" },
+                                    { id: "e_r3", label: "Financial Times - Slot 1", link: "https://www.ft.com/hong-kong" },
+                                    { id: "e_r4", label: "Financial Times - Slot 2", link: "https://www.ft.com/hong-kong" },
+                                    { id: "e_r5", label: "BBC Future - Slot 1", link: "https://www.bbc.com/business" },
+                                    { id: "e_r6", label: "BBC Future - Slot 2", link: "https://www.bbc.com/business" },
+                                    { id: "e_r7", label: "The Guardian (International) - Slot 1", link: "https://www.theguardian.com/international" },
+                                    { id: "e_r8", label: "The Guardian (International) - Slot 2", link: "https://www.theguardian.com/international" },
+                                    { id: "e_r9", label: "Aeon Essays - Slot 1", link: "https://aeon.co/essays" },
+                                    { id: "e_r10", label: "Aeon Essays - Slot 2", link: "https://aeon.co/essays" },
+                                    { id: "e_r11", label: "New York Times - Slot 1", link: "https://www.nytimes.com/?page=1" },
+                                    { id: "e_r12", label: "New York Times - Slot 2", link: "https://www.nytimes.com/?page=1" },
+                                    { id: "e_r13", label: "The Curious Economist - Slot 1", link: "https://thecuriouseconomist.com/" },
+                                    { id: "e_r14", label: "The Curious Economist - Slot 2", link: "https://thecuriouseconomist.com/" }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: "ewan-writing",
+                        title: "3. Writing & Essay Practice (IBDP Prep: Eco & History)",
+                        icon: "pen-tool",
+                        subsections: [
+                            {
+                                name: "Complete 2 short essays (~300 words each)",
+                                docLink: "https://docs.google.com/document/d/1JzBuZ8i1diSsss2w5tAP9nw5cXN4UycCDVRn44DKfCo/edit?usp=sharing",
+                                items: [
+                                    { id: "e_w1", label: "Essay 1 (CER Framework): Claim ➔ Evidence ➔ Reasoning" },
+                                    { id: "e_w2", label: "Essay 2 (IB Economics Framework): Argument ➔ Explanation ➔ Example ➔ Evaluation" }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: "ewan-chinese",
+                        title: "4. Chinese Language Routine",
+                        icon: "languages",
+                        subsections: [
+                            {
+                                name: "Structured Weekly Output",
+                                docLink: "https://docs.google.com/document/d/1PmeZBsb_vY1dOSzNKU2cLiMNWkyG7cPFnp4h9kNavCQ/edit?tab=t.0",
+                                items: [
+                                    { id: "e_zh1", label: "Essay / Model Answer Analysis: Write 1 prompt OR disassemble 1 model answer (拆解1篇 Model Answer)" },
+                                    { id: "e_zh2", label: "Reading Comprehension: Complete 1 reading comprehension passage (閱讀理解)" },
+                                    { id: "e_zh3", label: "Listening Task: 1 Listening session (video/audio)" },
+                                    { id: "e_zh4", label: "CER Summary: Write a 3-sentence summary using CER Framework" },
+                                    { id: "e_zh5", label: "Vocabulary Task: Learn & write sample sentences for 5 new vocabulary words (五個新詞語作句)" }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: "ewan-sat",
+                        title: "5. SAT Routine (at least 5 ticks)",
+                        icon: "graduation-cap",
+                        subsections: [
+                            {
+                                name: "Daily SAT Practice & Error Logging",
+                                docLink: "https://docs.google.com/document/d/12_j6eO5HSW5XGbeVAA7PufAsKtqNG1Q3M5SPrVBuom0/edit?tab=t.0",
+                                items: [
+                                    { id: "e_sat1", label: "Mon-Fri SAT-Math Daily: 10 Hard questions & log errors - Slot 1", link: "https://satsuiteeducatorquestionbank.collegeboard.org/" },
+                                    { id: "e_sat2", label: "Mon-Fri SAT-Math Daily: 10 Hard questions & log errors - Slot 2", link: "https://satsuiteeducatorquestionbank.collegeboard.org/" },
+                                    { id: "e_sat3", label: "Mon-Fri SAT-Math Daily: 10 Hard questions & log errors - Slot 3", link: "https://satsuiteeducatorquestionbank.collegeboard.org/" },
+                                    { id: "e_sat4", label: "Mon-Fri SAT-RW Daily: 10 RW questions - Slot 1", link: "https://satsuiteeducatorquestionbank.collegeboard.org/" },
+                                    { id: "e_sat5", label: "Mon-Fri SAT-RW Daily: 10 RW questions - Slot 2", link: "https://satsuiteeducatorquestionbank.collegeboard.org/" },
+                                    { id: "e_sat6", label: "Mon-Fri SAT-RW Daily: 10 RW questions - Slot 3", link: "https://satsuiteeducatorquestionbank.collegeboard.org/" },
+                                    { id: "e_sat7", label: "Saturday: Bluebook Module Practice / Past Paper (2 hours)" },
+                                    { id: "e_sat8", label: "Sunday: Error Book Review & Khan Academy SAT (No new questions)" }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: "ewan-aero",
+                        title: "6. Aero Quiz Log Book (until 29/11/2026)",
+                        icon: "plane",
+                        subsections: [
+                            {
+                                name: "Daily Aero Quiz Practice (7 Ticks Required)",
+                                docLink: "https://docs.google.com/document/d/1DaYaa65jCGzBOCGnKwqH9PTOtaUIwn9rtNHohxPmRWg/edit?usp=sharing",
+                                items: [
+                                    { id: "e_aero1", label: "Monday Aero Quiz", link: "https://aeroquiz.hkyaa.hk/" },
+                                    { id: "e_aero2", label: "Tuesday Aero Quiz", link: "https://aeroquiz.hkyaa.hk/" },
+                                    { id: "e_aero3", label: "Wednesday Aero Quiz", link: "https://aeroquiz.hkyaa.hk/" },
+                                    { id: "e_aero4", label: "Thursday Aero Quiz", link: "https://aeroquiz.hkyaa.hk/" },
+                                    { id: "e_aero5", label: "Friday Aero Quiz", link: "https://aeroquiz.hkyaa.hk/" },
+                                    { id: "e_aero6", label: "Saturday Aero Quiz", link: "https://aeroquiz.hkyaa.hk/" },
+                                    { id: "e_aero7", label: "Sunday Aero Quiz", link: "https://aeroquiz.hkyaa.hk/" }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            raphael: {
+                name: "Raphael",
+                targetTicks: 27,
+                quickLinks: [
+                    { title: "Physics Error Log", url: "https://docs.google.com/document/d/1xpebNdIwj5ruVWl79tn2l63M17XD6Fq7ZkteaH9kBCk/edit?usp=sharing" },
+                    { title: "Chem Error Log", url: "https://docs.google.com/document/d/1XVZS_v5AUGi7AVxGT54iZZx8MtKC_iEIuYgVuNeVnb8/edit?usp=sharing" },
+                    { title: "Writing Log", url: "https://docs.google.com/document/d/14SGB4kt7BxjrVByV2SZG4WIsqu74lfwAD5hjTe0wqbY/edit?usp=sharing" },
+                    { title: "Chinese Log", url: "https://docs.google.com/document/d/1PmeZBsb_vY1dOSzNKU2cLiMNWkyG7cPFnp4h9kNavCQ/edit?usp=sharing" },
+                    { title: "SAT Error Log", url: "https://docs.google.com/document/d/1VnMLkMWhB2Ar2rhl5PEWL_VTmJhE4JKmQvg7lyZPAIQ/edit?usp=sharing" },
+                    { title: "Tyre Business AI", url: "https://docs.google.com/document/d/11_Nyqqc4AX395luTpaNpuPyCkIZj_OgCobMZUyq_qlo/edit?usp=sharing" },
+                    { title: "Family Radar Scan", url: "https://docs.google.com/document/d/1RsYwYfIl3pIvkAJOlk_BaBxV4xy7McEMh4o8vklkmzI/edit?usp=sharing" }
+                ],
+                sections: [
+                    {
+                        id: "r-stem",
+                        title: "1. Physics, Mathematics & Chemistry Routine",
+                        icon: "atom",
+                        subsections: [
+                            {
+                                name: "Math Routine (Target: ≥5 Ticks)",
+                                items: [
+                                    { id: "r_m1", label: "Textbook Advanced Questions - Slot 1" },
+                                    { id: "r_m2", label: "Textbook Advanced Questions - Slot 2" },
+                                    { id: "r_m3", label: "Textbook Advanced Questions - Slot 3" },
+                                    { id: "r_m4", label: "Revision Village practice - Slot 1" },
+                                    { id: "r_m5", label: "Revision Village practice - Slot 2" },
+                                    { id: "r_m6", label: "CSMC Practice - Slot 1" },
+                                    { id: "r_m7", label: "CSMC Practice - Slot 2" }
+                                ]
+                            },
+                            {
+                                name: "Physics Routine (Target: ≥7 Ticks)",
+                                items: [
+                                    { id: "r_p1", label: "Isaac Physics A-Level - Slot 1" },
+                                    { id: "r_p2", label: "Isaac Physics A-Level - Slot 2" },
+                                    { id: "r_p3", label: "Isaac Physics A-Level - Slot 3" },
+                                    { id: "r_p4", label: "Isaac Physics A-Level - Slot 4" },
+                                    { id: "r_p5", label: "Isaac Physics A-Level - Slot 5" },
+                                    { id: "r_p6", label: "Isaac Physics A-Level - Slot 6" },
+                                    { id: "r_p7", label: "Isaac Physics A-Level - Slot 7" },
+                                    { id: "r_p8", label: "Revision Village Physics" },
+                                    { id: "r_p9", label: "SAT Coursebook Chapter Read" },
+                                    { id: "r_p10", label: "SAT Workbook Practice" },
+                                    { id: "r_p11", label: "Sunday University Physics Reading" },
+                                    { id: "r_p12", label: "SPC / Physics Bowl Past Paper" }
+                                ]
+                            },
+                            {
+                                name: "Chemistry Routine (Target: ≥2 Ticks)",
+                                items: [
+                                    { id: "r_c1", label: "Isaac Chem A-Level - Slot 1" },
+                                    { id: "r_c2", label: "Isaac Chem A-Level - Slot 2" }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: "r-reading",
+                        title: "2. English & Economics Reading Routine",
+                        icon: "newspaper",
+                        subsections: [
+                            {
+                                name: "High-Level Reading (Target: ≥5 Ticks)",
+                                items: [
+                                    { id: "r_r1", label: "The Economist - 1", link: "https://archive.is/SnRDz" },
+                                    { id: "r_r2", label: "The Economist - 2", link: "https://archive.is/SnRDz" },
+                                    { id: "r_r3", label: "Financial Times", link: "https://www.ft.com/hong-kong" },
+                                    { id: "r_r4", label: "BBC Future", link: "https://www.bbc.com/business" },
+                                    { id: "r_r5", label: "The Guardian", link: "https://www.theguardian.com/international" },
+                                    { id: "r_r6", label: "Aeon Essays", link: "https://aeon.co/essays" },
+                                    { id: "r_r7", label: "The Curious Economist", link: "https://thecuriouseconomist.com/" }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: "r-cs",
+                        title: "3. CS50, USACO & Capstone Projects",
+                        icon: "code",
+                        subsections: [
+                            {
+                                name: "Capstone & Coding Execution",
+                                items: [
+                                    { id: "r_cs1", label: "CS50 Practice & GitHub Commit - Slot 1" },
+                                    { id: "r_cs2", label: "CS50 Practice & GitHub Commit - Slot 2" },
+                                    { id: "r_cs3", label: "USACO Practice / Contest Prep", link: "https://usaco.guide/" },
+                                    { id: "r_cap1", label: "Capstone Tyre Business AI Log Update", link: "https://docs.google.com/document/d/11_Nyqqc4AX395luTpaNpuPyCkIZj_OgCobMZUyq_qlo/edit?usp=sharing" },
+                                    { id: "r_cap2", label: "Capstone Family Radar Scan Log Update", link: "https://docs.google.com/document/d/1RsYwYfIl3pIvkAJOlk_BaBxV4xy7McEMh4o8vklkmzI/edit?usp=sharing" }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // ============================================================
+        // APP STATE & PERSISTENCE (FIXED)
+        // ============================================================
+        let currentStudent = 'ewan';
+        let activeTab = 'checklist';
+        let userState = {
+            ewan: { ticks: {}, history: [] },
+            raphael: { ticks: {}, history: [] }
+        };
+
+        let historyChartInstance = null;
+        let categoryChartInstance = null;
+
+        // ---- Local Storage helpers (PRIMARY storage) ----
+        function getStorageKey(student) {
+            return `study_tracker_v2_${student}`;
+        }
+
+        function loadFromLocal(student) {
+            try {
+                const raw = localStorage.getItem(getStorageKey(student));
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    // Ensure structure
+                    userState[student] = {
+                        ticks: parsed.ticks || {},
+                        history: Array.isArray(parsed.history) ? parsed.history : []
+                    };
+                    return true;
+                }
+            } catch (e) {
+                console.warn('Failed to load from localStorage', e);
+            }
+            return false;
+        }
+
+        function saveToLocal(student) {
+            try {
+                localStorage.setItem(getStorageKey(student), JSON.stringify(userState[student]));
+                return true;
+            } catch (e) {
+                console.error('Failed to save to localStorage', e);
+                return false;
+            }
+        }
+
+        // ---- Sync status UI ----
+        function updateSyncStatus(type, label) {
+            const badge = document.getElementById('sync-status-badge');
+            if (!badge) return;
+
+            if (type === 'synced' || type === 'local') {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center space-x-1";
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span>${label}</span>`;
+            } else if (type === 'saving') {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center space-x-1";
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span><span>${label}</span>`;
+            } else {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center space-x-1";
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span><span>${label}</span>`;
+            }
+        }
+
+        // ---- Core save function (always local first) ----
+        function saveProgress(showToastMsg = false) {
+            updateSyncStatus('saving', 'Saving...');
+            const ok = saveToLocal(currentStudent);
+            if (ok) {
+                updateSyncStatus('local', 'Saved locally');
+                if (showToastMsg) showToast('Progress saved!');
+            } else {
+                updateSyncStatus('error', 'Save failed');
+                if (showToastMsg) showToast('Save failed – check browser storage');
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-notification');
+            const toastMsg = document.getElementById('toast-message');
+            if (toast && toastMsg) {
+                toastMsg.innerText = msg || 'Progress Saved!';
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-0', 'opacity-100');
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 2200);
+            }
+        }
+
+        // ============================================================
+        // UI RENDERING
+        // ============================================================
+        window.manualSaveProgress = function() {
+            saveProgress(true);
+        };
+
+        window.switchProfile = function(student) {
+            // Save current before switching
+            saveToLocal(currentStudent);
+            currentStudent = student;
+            loadFromLocal(currentStudent); // load the other profile
+            renderProfileUI();
+        };
+
+        function renderProfileUI() {
+            const btnEwan = document.getElementById('btn-ewan');
+            const btnRaphael = document.getElementById('btn-raphael');
+            
+            if (currentStudent === 'ewan') {
+                btnEwan.className = "px-3 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center space-x-1.5 bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm";
+                btnRaphael.className = "px-3 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white";
+                document.getElementById('target-student-badge').innerText = "Ewan's Weekly Plan";
+            } else {
+                btnRaphael.className = "px-3 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center space-x-1.5 bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm";
+                btnEwan.className = "px-3 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white";
+                document.getElementById('target-student-badge').innerText = "Raphael's Weekly Plan";
+            }
+
+            const history = userState[currentStudent].history || [];
+            const activeWeekIndex = history.length;
+            const weekDateInfo = getWeekDateRange(activeWeekIndex);
+
+            document.getElementById('header-date-range').innerText = `Week ${activeWeekIndex + 1}: ${weekDateInfo.formattedRange}`;
+
+            renderQuickLinks();
+            renderChecklist();
+            updateStats();
+            if (activeTab === 'dashboard') renderDashboard();
+        }
+
+        function renderQuickLinks() {
+            const container = document.getElementById('quick-links-container');
+            const links = DATA[currentStudent].quickLinks;
+            container.innerHTML = links.map(link => `
+                <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 transition border border-slate-200 dark:border-slate-700">
+                    <span>${link.title}</span>
+                    <i data-lucide="external-link" class="w-3 h-3 text-slate-400"></i>
+                </a>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderChecklist() {
+            const wrapper = document.getElementById('sections-wrapper');
+            const studentData = DATA[currentStudent];
+            const ticksState = userState[currentStudent].ticks || {};
+
+            wrapper.innerHTML = studentData.sections.map(section => {
+                let sectionTicks = 0;
+                let sectionTotal = 0;
+
+                const subsectionsHtml = section.subsections.map(sub => {
+                    const itemsHtml = sub.items.map(item => {
+                        const isChecked = !!ticksState[item.id];
+                        sectionTotal++;
+                        if (isChecked) sectionTicks++;
+
+                        return `
+                            <label class="group flex items-start space-x-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700/50">
+                                <input type="checkbox" 
+                                       data-item-id="${item.id}"
+                                       onchange="toggleTick('${item.id}', this.checked)" 
+                                       ${isChecked ? 'checked' : ''} 
+                                       class="mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 dark:border-slate-600 focus:ring-blue-500 dark:focus:ring-blue-600 dark:bg-slate-800">
+                                <span class="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition leading-snug flex-1 ${isChecked ? 'line-through text-slate-400 dark:text-slate-500' : ''}">
+                                    ${item.label}
+                                    ${item.link ? `<a href="${item.link}" target="_blank" onclick="event.stopPropagation()" class="ml-1 text-blue-500 hover:underline inline-flex items-center"><i data-lucide="external-link" class="w-3 h-3 inline"></i></a>` : ''}
+                                </span>
+                            </label>
+                        `;
+                    }).join('');
+
+                    return `
+                        <div class="mb-4 last:mb-0">
+                            <div class="flex items-center justify-between mb-2">
+                                <h5 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">${sub.name}</h5>
+                                ${sub.docLink ? `<a href="${sub.docLink}" target="_blank" class="text-xs text-blue-500 hover:underline inline-flex items-center space-x-1 font-medium"><i data-lucide="file-text" class="w-3 h-3"></i><span>Doc</span></a>` : ''}
+                            </div>
+                            <div class="space-y-1">
+                                ${itemsHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                const percent = Math.round((sectionTicks / (sectionTotal || 1)) * 100);
+
+                return `
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+                                <div class="flex items-center space-x-3">
+                                    <div class="p-2 rounded-xl bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400">
+                                        <i data-lucide="${section.icon}" class="w-5 h-5"></i>
+                                    </div>
+                                    <h4 class="font-bold text-base leading-tight">${section.title}</h4>
+                                </div>
+                                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                    ${sectionTicks} / ${sectionTotal}
+                                </span>
+                            </div>
+                            <div>
+                                ${subsectionsHtml}
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                            <div class="flex justify-between items-center text-xs text-slate-500 mb-1">
+                                <span>Section Progress</span>
+                                <span class="font-semibold text-slate-700 dark:text-slate-300">${percent}%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-blue-600 h-full rounded-full transition-all duration-300" style="width: ${percent}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // FIXED toggle: use the actual checked state from the checkbox
+        window.toggleTick = function(itemId, isChecked) {
+            if (!userState[currentStudent].ticks) {
+                userState[currentStudent].ticks = {};
+            }
+            userState[currentStudent].ticks[itemId] = !!isChecked;
+            saveProgress(false);           // auto-save immediately
+            renderChecklist();             // re-render to update styles & counters
+            updateStats();
+        };
+
+        function updateStats() {
+            const studentData = DATA[currentStudent];
+            const ticksState = userState[currentStudent].ticks || {};
+            
+            let totalCompleted = 0;
+            Object.values(ticksState).forEach(val => { if (val) totalCompleted++; });
+
+            const target = studentData.targetTicks;
+            const percent = Math.min(Math.round((totalCompleted / target) * 100), 100);
+
+            document.getElementById('header-completed-ticks').innerText = totalCompleted;
+            document.getElementById('header-target-ticks').innerText = `/ ${target} target`;
+            document.getElementById('header-progress-percent').innerText = `${percent}%`;
+            
+            const circle = document.getElementById('header-progress-circle');
+            if (circle) circle.setAttribute('stroke-dasharray', `${percent}, 100`);
+        }
+
+        window.switchTab = function(tab) {
+            activeTab = tab;
+            const viewChecklist = document.getElementById('view-checklist');
+            const viewDashboard = document.getElementById('view-dashboard');
+            const btnChecklist = document.getElementById('tab-checklist-btn');
+            const btnDashboard = document.getElementById('tab-dashboard-btn');
+            const btnChecklistMobile = document.getElementById('tab-checklist-btn-mobile');
+            const btnDashboardMobile = document.getElementById('tab-dashboard-btn-mobile');
+
+            if (tab === 'checklist') {
+                viewChecklist.classList.remove('hidden');
+                viewDashboard.classList.add('hidden');
+                btnChecklist.className = "px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm";
+                btnDashboard.className = "px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white";
+                if (btnChecklistMobile) {
+                    btnChecklistMobile.className = "flex-1 py-2.5 text-center text-sm font-medium border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 flex items-center justify-center space-x-2";
+                    btnDashboardMobile.className = "flex-1 py-2.5 text-center text-sm font-medium border-b-2 border-transparent text-slate-500 dark:text-slate-400 flex items-center justify-center space-x-2";
+                }
+            } else {
+                viewChecklist.classList.add('hidden');
+                viewDashboard.classList.remove('hidden');
+                btnDashboard.className = "px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm";
+                btnChecklist.className = "px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white";
+                if (btnChecklistMobile) {
+                    btnDashboardMobile.className = "flex-1 py-2.5 text-center text-sm font-medium border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 flex items-center justify-center space-x-2";
+                    btnChecklistMobile.className = "flex-1 py-2.5 text-center text-sm font-medium border-b-2 border-transparent text-slate-500 dark:text-slate-400 flex items-center justify-center space-x-2";
+                }
+                renderDashboard();
+            }
+        };
+
+        function renderDashboard() {
+            const ticksState = userState[currentStudent].ticks || {};
+            const history = userState[currentStudent].history || [];
+            const target = DATA[currentStudent].targetTicks;
+
+            let currentTicks = 0;
+            Object.values(ticksState).forEach(val => { if (val) currentTicks++; });
+
+            const rate = Math.round((currentTicks / target) * 100);
+
+            document.getElementById('dash-current-ticks').innerText = currentTicks;
+            document.getElementById('dash-target-ticks').innerText = `Target: ${target}`;
+            document.getElementById('dash-completion-rate').innerText = `${rate}%`;
+            document.getElementById('dash-progress-bar').style.width = `${Math.min(rate, 100)}%`;
+
+            // Status label
+            const statusLabel = document.getElementById('dash-status-label');
+            if (rate >= 100) {
+                statusLabel.innerText = 'Target Met!';
+                statusLabel.className = 'text-xs text-emerald-600 dark:text-emerald-400 font-medium';
+            } else if (rate >= 60) {
+                statusLabel.innerText = 'On Track';
+                statusLabel.className = 'text-xs text-emerald-600 dark:text-emerald-400 font-medium';
+            } else {
+                statusLabel.innerText = 'Keep Going';
+                statusLabel.className = 'text-xs text-amber-600 dark:text-amber-400 font-medium';
+            }
+
+            const activeWeekIndex = history.length;
+            const weekDateInfo = getWeekDateRange(activeWeekIndex);
+
+            document.getElementById('dash-current-week-label').innerText = `Week ${activeWeekIndex + 1}`;
+            document.getElementById('dash-current-week-dates').innerText = weekDateInfo.formattedRange;
+
+            const tableBody = document.getElementById('history-table-body');
+            if (history.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-slate-400">No archived weekly records yet. Click "Complete & Archive Week" to record progress.</td></tr>`;
+            } else {
+                tableBody.innerHTML = history.slice().reverse().map(h => `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                        <td class="px-6 py-4 font-semibold text-slate-900 dark:text-white">${h.week}</td>
+                        <td class="px-6 py-4 text-slate-500">${h.dateRange}</td>
+                        <td class="px-6 py-4 font-bold text-blue-600 dark:text-blue-400">${h.total}</td>
+                        <td class="px-6 py-4 text-slate-500">${h.target}</td>
+                        <td class="px-6 py-4 font-medium text-emerald-600 dark:text-emerald-400">${h.rate}</td>
+                    </tr>
+                `).join('');
+            }
+
+            renderCharts(history, currentTicks, target);
+        }
+
+        function renderCharts(history, currentTicks, target) {
+            const labels = history.map(h => h.week);
+            labels.push(`Week ${history.length + 1} (Current)`);
+
+            const dataPoints = history.map(h => h.total);
+            dataPoints.push(currentTicks);
+
+            const ctxHistory = document.getElementById('historyChart').getContext('2d');
+            if (historyChartInstance) historyChartInstance.destroy();
+
+            historyChartInstance = new Chart(ctxHistory, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Ticks Achieved',
+                        data: dataPoints,
+                        backgroundColor: dataPoints.map((val, idx) => idx === dataPoints.length - 1 ? '#3b82f6' : '#94a3b8'),
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+
+            const studentData = DATA[currentStudent];
+            const ticksState = userState[currentStudent].ticks || {};
+            const catLabels = [];
+            const catData = [];
+
+            studentData.sections.forEach(sec => {
+                catLabels.push(sec.title.split('.')[1] || sec.title);
+                let count = 0;
+                sec.subsections.forEach(sub => {
+                    sub.items.forEach(item => { if (ticksState[item.id]) count++; });
+                });
+                catData.push(count);
+            });
+
+            const ctxCat = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChartInstance) categoryChartInstance.destroy();
+
+            categoryChartInstance = new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        data: catData,
+                        backgroundColor: ['#3b82f6', '#10b981', '#6366f1', '#f59e0b', '#8b5cf6', '#0284c7']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+                }
+            });
+        }
+
+        window.archiveCurrentWeek = function() {
+            if (!confirm('Archive this week\'s progress and start a new week?\n\nCurrent ticks will be recorded in history and reset.')) {
+                return;
+            }
+
+            const ticksState = userState[currentStudent].ticks || {};
+            let total = 0;
+            Object.values(ticksState).forEach(val => { if (val) total++; });
+
+            const target = DATA[currentStudent].targetTicks;
+            const history = userState[currentStudent].history || [];
+            const weekNum = history.length + 1;
+            const weekDateInfo = getWeekDateRange(history.length);
+            const rate = `${Math.round((total / target) * 100)}%`;
+
+            history.push({
+                week: `Week ${weekNum}`,
+                dateRange: weekDateInfo.formattedRange,
+                total: total,
+                target: target,
+                rate: rate
+            });
+
+            userState[currentStudent].history = history;
+            userState[currentStudent].ticks = {};
+
+            saveProgress(true);
+            renderProfileUI();
+            showToast(`Week ${weekNum} archived!`);
+        };
+
+        window.clearHistory = function() {
+            if (!confirm('Clear all archived weekly history for this student? This cannot be undone.')) {
+                return;
+            }
+            userState[currentStudent].history = [];
+            saveProgress(true);
+            renderDashboard();
+        };
+
+        // ============================================================
+        // INITIALIZATION
+        // ============================================================
+        window.addEventListener('load', () => {
+            // Load both profiles from localStorage
+            loadFromLocal('ewan');
+            loadFromLocal('raphael');
+
+            // Default to Ewan
+            currentStudent = 'ewan';
+            renderProfileUI();
+            updateSyncStatus('local', 'Saved locally');
+            lucide.createIcons();
+        });
+
+        // Optional: save when the user leaves the page
+        window.addEventListener('beforeunload', () => {
+            saveToLocal(currentStudent);
+        });
+    </script>
+</body>
+</html>
